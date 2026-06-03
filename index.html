@@ -42,7 +42,7 @@
         <div class="card">
             <span id="badge-status" class="badge badge-red">PAUSADO</span>
             <h2>Corretor Logado</h2>
-            <p id="nome-corretor" class="subtext">Buscando...</p>
+            <p id="nome-corretor" class="subtext">JOSÉ JOANN DA SILVA</p>
             <button class="btn-gold">Sair</button>
         </div>
         <div class="card">
@@ -65,44 +65,17 @@
         </div>
     </footer>
     <script>
-        const BANCO_URL = "https://firebaseio.com";
-        let corretorKey = null;
-
-        async function carregarCorretor() {
-            try {
-                const resposta = await fetch(BANCO_URL);
-                const dados = await resposta.json();
-                if (dados) {
-                    corretorKey = Object.keys(dados)[0]; // Pega o primeiro corretor para o teste
-                    const c = dados[corretorKey];
-                    document.getElementById('nome-corretor').textContent = c.nome;
-                    atualizarVisual(c.status);
-                } else {
-                    document.getElementById('nome-corretor').textContent = "Nenhum corretor cadastrado.";
-                }
-            } catch (e) { console.log(e); }
-        }
-
         function atualizarVisual(status) {
             const badge = document.getElementById('badge-status');
             badge.textContent = status;
             badge.className = status === 'ATIVO' ? "badge badge-green" : "badge badge-red";
+            localStorage.setItem('status_jose', status);
         }
-
-        async function mudarStatus(novoStatus) {
-            if (!corretorKey) return;
-            try {
-                await fetch(`https://firebaseio.com{corretorKey}.json`, {
-                    method: "PATCH",
-                    body: JSON.stringify({ status: novoStatus })
-                });
-                atualizarVisual(novoStatus);
-            } catch (e) { console.log(e); }
-        }
-
-        document.getElementById('btn-ativo').addEventListener('click', () => mudarStatus('ATIVO'));
-        document.getElementById('btn-pausar').addEventListener('click', () => mudarStatus('PAUSADO'));
-        carregarCorretor();
+        document.getElementById('btn-ativo').addEventListener('click', () => atualizarVisual('ATIVO'));
+        document.getElementById('btn-pausar').addEventListener('click', () => atualizarVisual('PAUSADO'));
+        
+        const statusSalvo = localStorage.getItem('status_jose') || 'PAUSADO';
+        atualizarVisual(statusSalvo);
     </script>
 </body>
 </html>
