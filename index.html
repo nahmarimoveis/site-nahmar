@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NAHMAR IMÓVEIS - Painel Admin</title>
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
     <style>
         body { background-color: #0b1a30; color: #1e293b; font-family: sans-serif; margin: 0; padding: 20px; box-sizing: border-box; }
         .container { max-width: 800px; margin: 0 auto; }
@@ -57,15 +55,15 @@
         </div>
     </div>
     <script>
-        const firebaseConfig = { databaseURL: "https://firebaseio.com" };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const BANCO_URL = "https://firebaseio.com";
+        const LEADS_URL = "https://firebaseio.com";
 
-        function carregarCorretores() {
+        async function carregarCorretores() {
             const lista = document.getElementById('lista-corretores');
-            database.ref('corretores').on('value', (snapshot) => {
+            try {
+                const resposta = await fetch(BANCO_URL);
+                const dados = await resposta.json();
                 lista.innerHTML = "";
-                const dados = snapshot.val();
                 if (dados) {
                     Object.keys(dados).forEach(key => {
                         const c = dados[key];
@@ -77,28 +75,49 @@
                 } else {
                     lista.innerHTML = `<p style="color:#94a3b8;text-align:center;">Nenhum corretor cadastrado.</p>`;
                 }
-            });
+            } catch (erro) {
+                console.log(erro);
+            }
         }
 
-        document.getElementById('form-corretor').addEventListener('submit', function(e) {
+        document.getElementById('form-corretor').addEventListener('submit', async function(e) {
             e.preventDefault();
             const nome = document.getElementById('nome-corretor').value;
             const email = document.getElementById('email-corretor').value;
-            database.ref('corretores').push({ nome, email, status: 'PAUSADO' }, (error) => {
-                if (error) alert("Erro: " + error.message);
-                else { document.getElementById('form-corretor').reset(); }
-            });
+            
+            try {
+                const resposta = await fetch(BANCO_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ nome, email, status: 'PAUSADO' })
+                });
+                if (resposta.ok) {
+                    alert("Sucesso! O corretor " + nome + " foi gravado na nuvem.");
+                    document.getElementById('form-corretor').reset();
+                    carregarCorretores();
+                }
+            } catch (erro) {
+                alert("Erro de rede: " + erro.message);
+            }
         });
 
-        document.getElementById('form-lead').addEventListener('submit', function(e) {
+        document.getElementById('form-lead').addEventListener('submit', async function(e) {
             e.preventDefault();
             const nome = document.getElementById('nome-lead').value;
             const telefone = document.getElementById('tel-lead').value;
             const email = document.getElementById('email-lead').value;
-            database.ref('leads').push({ nome, telefone, email, status: 'NOVO' }, (error) => {
-                if (error) alert("Erro: " + error.message);
-                else { alert("Lead injetado com sucesso!"); document.getElementById('form-lead').reset(); }
-            });
+            
+            try {
+                const resposta = await fetch(LEADS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ nome, telefone, email, status: 'NOVO' })
+                });
+                if (resposta.ok) {
+                    alert("Lead injetado com sucesso!");
+                    document.getElementById('form-lead').reset();
+                }
+            } catch (erro) {
+                alert("Erro ao salvar lead: " + erro.message);
+            }
         });
 
         carregarCorretores();
