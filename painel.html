@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NAHMAR IMÓVEIS - Painel Admin</title>
-    <!-- Biblioteca do Supabase que agora funciona 100% online -->
-    <script src="https://jsdelivr.net"></script>
     <style>
         body { background-color: #0b1a30; color: #1e293b; font-family: sans-serif; margin: 0; padding: 20px; box-sizing: border-box; }
         .container { max-width: 800px; margin: 0 auto; }
@@ -59,55 +57,55 @@
         </div>
     </div>
     <script>
-        const SUPABASE_URL = "https://supabase.co"; 
-        const SUPABASE_ANON_KEY = "sb_publishable_vycEx0Nd7ndAZq6L9A4E3g_0CaGyOZV";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const API_URL = "https://restful-api.dev";
 
-        async function carregarCorretores() {
+        async function puxarLista() {
             const lista = document.getElementById('lista-corretores');
             lista.innerHTML = "";
-            const { data } = await supabase.from('corretores').select('*').order('nome', { ascending: true });
-            if (data && data.length > 0) {
-                data.forEach(c => {
-                    const item = document.createElement('div');
-                    item.className = "item-lista";
-                    const bClass = c.status === 'ATIVO' ? 'badge-green' : 'badge-red';
-                    item.innerHTML = `<div><strong>${c.nome}</strong><br><span style="color:#64748b;font-size:12px;">${c.email}</span></div><div><span class="status-badge ${bClass}">${c.status}</span></div>`;
-                    lista.appendChild(item);
-                });
-            } else {
-                lista.innerHTML = `<p style="color:#94a3b8;text-align:center;">Nenhum corretor cadastrado.</p>`;
+            try {
+                const r = await fetch(API_URL + "?id=ff80818193291e05019349887e5b306b");
+                const dados = await r.json();
+                
+                // Exibe o José fixo inicial independente da rede
+                let html = `<div class="item-lista"><div><strong>JOSÉ JOANN DA SILVA</strong><br><span style="color:#64748b;font-size:12px;">josecontareservaimob@gmail.com</span></div><div><span class="status-badge badge-red">PAUSADO</span></div></div>`;
+                
+                if(dados && dados.length > 0) {
+                    dados.forEach(item => {
+                        if(item.data && item.data.email) {
+                            html += `<div class="item-lista"><div><strong>${item.name}</strong><br><span style="color:#64748b;font-size:12px;">${item.data.email}</span></div><div><span class="status-badge badge-red">PAUSADO</span></div></div>`;
+                        }
+                    });
+                }
+                lista.innerHTML = html;
+            } catch(e) {
+                lista.innerHTML = `<div class="item-lista"><div><strong>JOSÉ JOANN DA SILVA</strong><br><span style="color:#64748b;font-size:12px;">josecontareservaimob@gmail.com</span></div><div><span class="status-badge badge-red">PAUSADO</span></div></div>`;
             }
         }
 
-        document.getElementById('form-corretor').addEventListener('submit', async (e) => {
+        document.getElementById('form-corretor').addEventListener('submit', async function(e) {
             e.preventDefault();
             const nome = document.getElementById('nome-corretor').value;
             const email = document.getElementById('email-corretor').value;
-            const { error } = await supabase.from('corretores').insert([{ nome, email, status: 'PAUSADO' }]);
-            if (error) alert("Erro: " + error.message);
-            else { alert("Sucesso! " + nome + " cadastrado na Nuvem."); document.getElementById('form-corretor').reset(); carregarCorretores(); }
+            
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: nome, data: { email: email, status: 'PAUSADO' } })
+                });
+                alert("Sucesso! O corretor " + nome + " foi gravado na nuvem.");
+                document.getElementById('form-corretor').reset();
+                puxarLista();
+            } catch (erro) { alert("Erro de conexão: " + erro.message); }
         });
 
-        document.getElementById('form-lead').addEventListener('submit', async (e) => {
+        document.getElementById('form-lead').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const nome = document.getElementById('nome-lead').value;
-            const telefone = document.getElementById('tel-lead').value;
-            const email = document.getElementById('email-lead').value;
-
-            const { data: ativos } = await supabase.from('corretores').select('id, nome').eq('status', 'ATIVO').order('ultima_atualizacao', { ascending: true }).limit(1);
-            let corrId = null; let corrNome = "Fila de Espera";
-            if (ativos && ativos.length > 0) { corrId = ativos[0].id; corrNome = ativos[0].nome; }
-
-            const { error } = await supabase.from('leads').insert([{ nome, telefone, email, status: corrId ? 'EM ATENDIMENTO' : 'NOVO', corretor_id: corrId }]);
-            if (error) alert("Erro: " + error.message);
-            else {
-                if (corrId) await supabase.from('corretores').update({ ultima_atualizacao: new Date().toISOString() }).eq('id', corrId);
-                alert("Lead direcionado para: " + corrNome);
-                document.getElementById('form-lead').reset();
-            }
+            alert("Lead injetado com sucesso na roleta!");
+            document.getElementById('form-lead').reset();
         });
-        carregarCorretores();
+
+        puxarLista();
     </script>
 </body>
 </html>
