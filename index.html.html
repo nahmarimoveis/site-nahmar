@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROEFI ULTRA - Painel Corretor</title>
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body { background-color: #0b1a30; color: #1e293b; font-family: sans-serif; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
+        main { width: 100%; max-width: 500px; margin: 0 auto; padding: 24px 16px; flex-grow: 1; box-sizing: border-box; }
+        .header { text-align: center; margin-bottom: 24px; }
+        .header h1 { color: #f59e0b; margin: 0; font-size: 20px; letter-spacing: 1px; }
+        .header p { color: #cbd5e1; margin: 4px 0 0 0; font-size: 12px; }
+        .header span { color: #94a3b8; font-size: 10px; }
+        .card { background-color: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; box-sizing: border-box; }
+        .badge { position: absolute; top: 12px; right: 16px; font-size: 10px; font-weight: bold; padding: 4px 8px; border-radius: 9999px; }
+        .badge-red { background-color: #fee2e2; color: #dc2626; }
+        .badge-green { background-color: #d1fae5; color: #059669; }
+        h2 { font-size: 11px; color: #94a3b8; text-transform: uppercase; margin: 0 0 4px 0; letter-spacing: 0.5px; }
+        .subtext { font-size: 14px; color: #475569; margin: 0 0 16px 0; font-weight: bold; }
+        .desc { font-size: 11px; color: #94a3b8; margin: 0 0 16px 0; }
+        .btn-gold { width: 100%; background-color: #f59e0b; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; text-transform: uppercase; }
+        .grid-status { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-status { border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; text-transform: uppercase; background: #f8fafc; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-status-active { color: #059669; border-color: #a7f3d0; background-color: #ecfdf5; }
+        .btn-status-pause { color: #dc2626; border-color: #fecaca; background-color: #fef2f2; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-green { background-color: #10b981; }
+        .dot-red { background-color: #ef4444; }
+        footer { background-color: #112240; border-top: 1px solid #1e293b; position: sticky; bottom: 0; width: 100%; }
+        .menu-container { max-width: 500px; margin: 0 auto; display: flex; justify-content: space-between; padding: 12px 8px; box-sizing: border-box; }
+        .menu-btn { background: none; border: none; color: #94a3b8; font-size: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; padding: 6px 10px; border-radius: 6px; }
+        .menu-btn.active { background-color: #1e293b; color: white; }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="header">
+            <h1>PROEFI ULTRA</h1>
+            <p>Produção Eficiente</p>
+            <span style="color: #f59e0b; font-weight: bold;">NAHMAR IMÓVEIS</span>
+        </div>
+        <div class="card">
+            <span id="badge-status" class="badge badge-red">PAUSADO</span>
+            <h2>Corretor Logado</h2>
+            <p id="nome-corretor" class="subtext">Buscando...</p>
+            <button class="btn-gold">Sair</button>
+        </div>
+        <div class="card">
+            <h2>Status do Operador</h2>
+            <p class="desc">Quando PAUSADO, você não recebe leads.</p>
+            <div class="grid-status">
+                <button id="btn-ativo" class="btn-status btn-status-active"><span class="dot dot-green"></span> Estou Ativo</button>
+                <button id="btn-pausar" class="btn-status btn-status-pause"><span class="dot dot-red"></span> Pausar</button>
+            </div>
+            <p style="text-align: center; font-size: 10px; color: #94a3b8; margin: 12px 0 0 0;">Equipe: plantao_nahmar</p>
+        </div>
+    </main>
+    <footer>
+        <div class="menu-container">
+            <button class="menu-btn active">Painel</button>
+            <button class="menu-btn">Atendimento</button>
+            <button class="menu-btn">Mini CRM</button>
+            <button class="menu-btn">Resultados</button>
+            <button class="menu-btn">Config</button>
+        </div>
+    </footer>
+    <script>
+        const SUPABASE_URL = "https://supabase.co"; 
+        const SUPABASE_ANON_KEY = "sb_publishable_vycEx0Nd7ndAZq6L9A4E3g_0CaGyOZV";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let idCorretorLogado = null;
+
+        async function carregarDadosCorretor() {
+            const { data } = await supabase.from('corretores').select('*').limit(1);
+            if (data && data.length > 0) {
+                idCorretorLogado = data[0].id;
+                document.getElementById('nome-corretor').textContent = data[0].nome;
+                atualizarVisual(data[0].status);
+            } else {
+                document.getElementById('nome-corretor').textContent = "Nenhum corretor na nuvem.";
+            }
+        }
+
+        function atualizarVisual(status) {
+            const badge = document.getElementById('badge-status');
+            badge.textContent = status;
+            badge.className = status === 'ATIVO' ? "badge badge-green" : "badge badge-red";
+        }
+
+        async function mudarStatusNuvem(novoStatus) {
+            if (!idCorretorLogado) return;
+            const { error } = await supabase.from('corretores').update({ status: novoStatus, ultima_atualizacao: new Date().toISOString() }).eq('id', idCorretorLogado);
+            if (!error) atualizarVisual(novoStatus);
+        }
+
+        document.getElementById('btn-ativo').addEventListener('click', () => mudarStatusNuvem('ATIVO'));
+        document.getElementById('btn-pausar').addEventListener('click', () => mudarStatusNuvem('PAUSADO'));
+        carregarDadosCorretor();
+    </script>
+</body>
+</html>
